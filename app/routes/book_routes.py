@@ -1,4 +1,4 @@
-from flask import Blueprint, abort, make_response, request
+from flask import Blueprint, Response, abort, make_response, request
 from app.models.book import Book
 from ..db import db
 # from app.models.book import books
@@ -40,6 +40,55 @@ def get_all_books():
             }
         )
     return books_response
+
+@books_bp.get("/<book_id>")
+def get_one_book(book_id):
+    book = validate_book(book_id)
+    return {
+            "id": book.id,
+            "title": book.title,
+            "description": book.description,
+        }
+
+
+def validate_book(book_id):
+    try:
+       book_id = int(book_id)
+    except ValueError:
+        response = {"message": f"Book id {book_id} invalid"}
+        return abort(make_response(response, 400))
+
+    query = db.select(Book).where(Book.id == book_id)
+    book = db.session.scalar(query)
+    
+    
+    if not book:
+        response = {"message": f"Book id {book_id} not found"}
+        return abort(make_response(response, 404))
+    
+    return book   
+
+
+@books_bp.put("/<book_id>")
+def update_book(book_id):
+    book = validate_book(book_id)
+    request_body = request.get_json()
+
+    book.title = request_body["title"]
+    book.description = request_body["description"]
+    db.session.commit()
+
+    return Response(status=204, mimetype="application/json")
+
+
+@books_bp.delete("/<book_id>")
+def delete_book(book_id):
+    book = validate_book(book_id)
+    db.session.delete(book)
+    db.session.commit()
+
+    return Response(status=204, mimetype="application/json")
+
 
 # @book_bp.get("")
 # def get_all_books():
