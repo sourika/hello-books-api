@@ -1,8 +1,8 @@
 from flask import Blueprint, Response, abort, make_response, request
 from app.models.book import Book
+from app.models.author import Author
 from .route_utilities import validate_model
 from ..db import db
-# from app.models.book import books
 
 bp = Blueprint("book", __name__, url_prefix="/books")
 
@@ -38,7 +38,7 @@ def get_all_books():
     books_response = []
     for book in books:
         books_response.append(book.to_dict())
-    return books_response # [book for book in books book.to_dict()]
+    return books_response # [b.to_dict() for b in books]
 
 @bp.get("/<book_id>")
 def get_one_book(book_id):
@@ -51,8 +51,18 @@ def update_book(book_id):
     book = validate_model(Book, book_id)
     request_body = request.get_json()
 
-    book.title = request_body["title"]
-    book.description = request_body["description"]
+    if "title" in request_body:
+        book.title = request_body["title"]
+    if "description" in request_body:
+        book.description = request_body["description"]
+    if "author_id" in request_body:
+        if request_body["author_id"] is None:
+            book.author = None
+            book.author_id = None
+        else:
+            author = validate_model(Author, request_body["author_id"])
+            book.author = author    
+    
     db.session.commit()
 
     return Response(status=204, mimetype="application/json")
@@ -63,7 +73,6 @@ def delete_book(book_id):
     book = validate_model(Book, book_id)
     db.session.delete(book)
     db.session.commit()
-
     return Response(status=204, mimetype="application/json")
 
 
