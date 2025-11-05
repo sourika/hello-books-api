@@ -1,8 +1,7 @@
-from flask import Blueprint, Response, abort, make_response, request
+from flask import Blueprint, request
 from app.models.author import Author
 from app.models.book import Book
 from .route_utilities import validate_model, create_model, get_models_with_filters
-from ..db import db
 
 bp = Blueprint("author", __name__, url_prefix="/authors")
 
